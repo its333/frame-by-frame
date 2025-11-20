@@ -251,7 +251,7 @@ extension.skeleton.main = {
 			open: function () {
 				var skeleton = satus.last(this.path),
 					section = this.baseProvider.skeleton.header.sectionStart,
-					title = 'Frame By Frame';
+					title = 'Frame by Frame Pro';
 
 				if (skeleton.parentSkeleton) {
 					if (skeleton.parentSkeleton.label) {
@@ -310,68 +310,62 @@ extension.skeleton.main = {
 				component: 'switch',
 				text: 'hideInFullscreen'
 			},
-			shortcuts: {
-				component: 'button',
-				text: 'shortcuts',
-				on: {
-					click: {
-						component: 'section',
-						class: 'satus-section--card',
-						title: 'shortcuts',
+			shortcuts_panel: {
+				component: 'section',
+				variant: 'card',
+				title: 'shortcuts',
 
-						increase_framerate: {
-							component: 'shortcut',
-							text: 'increaseFramerate',
-							value: {
-								keys: {
-									38: {
-										key: 'ArrowUp'
-									}
-								}
+				increase_framerate: {
+					component: 'shortcut',
+					text: 'increaseFramerate',
+					value: {
+						keys: {
+							221: {
+								key: ']'
 							}
-						},
-						decrease_framerate: {
-							component: 'shortcut',
-							text: 'decreaseFramerate',
-							value: {
-								keys: {
-									40: {
-										key: 'ArrowDown'
-									}
-								}
+						}
+					}
+				},
+				decrease_framerate: {
+					component: 'shortcut',
+					text: 'decreaseFramerate',
+					value: {
+						keys: {
+							219: {
+								key: '['
 							}
-						},
-						prev_shortcut: {
-							component: 'shortcut',
-							text: 'previousFrame',
-							value: {
-								keys: {
-									37: {
-										key: 'ArrowLeft'
-									}
-								}
+						}
+					}
+				},
+				prev_shortcut: {
+					component: 'shortcut',
+					text: 'previousFrame',
+					value: {
+						keys: {
+							188: {
+								key: ','
 							}
-						},
-						next_shortcut: {
-							component: 'shortcut',
-							text: 'nextFrame',
-							value: {
-								keys: {
-									39: {
-										key: 'ArrowRight'
-									}
-								}
+						}
+					}
+				},
+				next_shortcut: {
+					component: 'shortcut',
+					text: 'nextFrame',
+					value: {
+						keys: {
+							190: {
+								key: '.'
 							}
-						},
-						hide_shortcut: {
-							component: 'shortcut',
-							text: 'hidePanel',
-							value: {
-								keys: {
-									72: {
-										key: 'h'
-									}
-								}
+						}
+					}
+				},
+				hide_shortcut: {
+					component: 'shortcut',
+					text: 'hidePanel',
+					value: {
+						keys: {
+							72: {
+								key: 'h'
 							}
 						}
 					}

@@ -123,6 +123,8 @@
                 };
 
                 register('loadedmetadata', this.setActiveVideo.bind(this, video));
+                register('play', this.setActiveVideo.bind(this, video));
+                register('playing', this.setActiveVideo.bind(this, video));
                 register('timeupdate', onTimeUpdate);
                 register('emptied', this.untrackVideo.bind(this, video));
 

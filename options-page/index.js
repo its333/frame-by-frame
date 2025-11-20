@@ -13,6 +13,18 @@ var extension = {
 	skeleton: {}
 };
 
+function renderError(messageKey) {
+	extension.skeleton.main.layers.toolbar = {
+		component: 'alert',
+		variant: 'error',
+		text: function () {
+			return satus.locale.get(messageKey || 'somethingWentWrongTryReloadingThePage');
+		}
+	};
+
+	satus.render(extension.skeleton);
+}
+
 
 /*--------------------------------------------------------------
 # INITIALIZATION
@@ -30,9 +42,24 @@ satus.storage.import(function (items) {
 			active: true,
 			currentWindow: true
 		}, function (tabs) {
-			chrome.tabs.sendMessage(tabs[0].id, {
+			var tab = tabs[0];
+
+			if (!tab || !tab.id) {
+				renderError();
+				return;
+			}
+
+			chrome.tabs.sendMessage(tab.id, {
 				action: 'options-page-connected'
 			}, function (response) {
+				// Handle missing receivers (e.g., chrome:// pages) gracefully.
+				if (chrome.runtime.lastError) {
+					var errMsg = chrome.runtime.lastError && chrome.runtime.lastError.message ? chrome.runtime.lastError.message : 'No receiver in tab';
+					console.warn('Frame-by-Frame options: unable to reach tab - ' + errMsg);
+					renderError();
+					return;
+				}
+
 				extension.hostname = response;
 
 				if (!response) {
@@ -87,6 +114,13 @@ satus.storage.import(function (items) {
 chrome.runtime.sendMessage({
 	action: 'options-page-connected'
 }, function (response) {
+	if (chrome.runtime.lastError) {
+		var errMsg = chrome.runtime.lastError && chrome.runtime.lastError.message ? chrome.runtime.lastError.message : 'Background not reachable';
+		console.warn('Frame-by-Frame options: background not reachable - ' + errMsg);
+		renderError();
+		return;
+	}
+
 	if (response.isPopup === false) {
 		document.body.setAttribute('tab', '');
 	}

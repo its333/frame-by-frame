@@ -4,16 +4,21 @@
 
 .satus-base {
 	--satus-light: 255, 255, 255;
-    --satus-primary: #3691bf;
-    --satus-base-background: #151528;
-    --satus-base-foreground: #fafafa;
-    --satus-header-background: #313172;
-    --satus-header-shadow: transparent;
-    --satus-section-background: #232343;
-    --satus-section-border: #232343;
-    --satus-modal-background: #313172;
-    --satus-modal-shadow: 0 1px 4px #22222f;
-    --satus-switch-track: #52527a;
+    --satus-primary: #ff9f1a;
+    --satus-base-background: #0e0f13;
+    --satus-base-foreground: #ffffff;
+    --satus-header-background: linear-gradient(135deg, #1b1d24, #111118);
+    --satus-header-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
+    --satus-section-background: #161720;
+    --satus-section-border: rgba(255, 255, 255, 0.08);
+    --satus-modal-background: #161720;
+    --satus-modal-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+    --satus-switch-track: rgba(255, 255, 255, 0.2);
+    --satus-switch-thumb: #ffffff;
+    --satus-input-background: rgba(255, 255, 255, 0.05);
+    --satus-input-border: rgba(255, 255, 255, 0.12);
+    --satus-card-radius: 14px;
+    --satus-gap: 14px;
 }
 
 .satus-alert--success {
@@ -51,6 +56,57 @@ body[tab] .satus-base {
 
 body[tab] .satus-alert {
 	display: none;
+}
+
+.satus-header {
+	padding: 18px 20px;
+	background: var(--satus-header-background);
+	box-shadow: var(--satus-header-shadow);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	backdrop-filter: blur(12px);
+}
+
+.satus-header .satus-section--align-start .satus-title {
+	font-size: 18px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	color: var(--satus-base-foreground);
+}
+
+.satus-shortcut__key {
+	background: rgba(12, 35, 70, 0.05) !important;
+	color: var(--satus-base-foreground) !important;
+	border: 1px solid rgba(12, 35, 70, 0.16) !important;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+	border-radius: 10px;
+}
+
+.satus-shortcut__value {
+	gap: 10px;
+}
+
+.satus-section--card .satus-shortcut {
+	border: 1px solid var(--satus-section-border);
+	border-radius: 12px;
+	padding: 12px 14px;
+	background: rgba(12, 35, 70, 0.02);
+}
+
+.satus-text-field input,
+.satus-select__current,
+.satus-color-picker__preview {
+	background: var(--satus-input-background) !important;
+	border: 1px solid var(--satus-input-border) !important;
+	border-radius: var(--satus-card-radius);
+}
+
+.satus-switch__track {
+	background: var(--satus-switch-track) !important;
+}
+
+.satus-switch__thumb {
+	background: var(--satus-switch-thumb) !important;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 }
 
 .satus-text-field--css-editor {

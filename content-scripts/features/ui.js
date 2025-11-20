@@ -7,10 +7,12 @@
 --------------------------------------------------------------*/
 
 function updateLocaleTextUi() {
-	extension.ui.time_text.textContent = extension.locale.get("time");
-	extension.ui.duration_text.textContent = extension.locale.get("duration");
-	extension.ui.frame_text.textContent = extension.locale.get("frame");
-	extension.ui.framerate_text.textContent = extension.locale.get("framerate");
+	var get = extension.locale.get;
+
+	extension.ui.time_text.textContent = get("time") || "Time";
+	extension.ui.duration_text.textContent = get("duration") || "Duration";
+	extension.ui.frame_text.textContent = get("frame") || "Frame";
+	extension.ui.framerate_text.textContent = get("framerate") || "FPS";
 }
 
 document.addEventListener('ui-create', function (event) {
@@ -25,14 +27,27 @@ document.addEventListener('ui-create', function (event) {
 	extension.ui.framerate = document.createElement('div');
 
 	extension.ui.time_text = document.createElement('div');
-	extension.ui.duration_text = document.createElement('div');
-	extension.ui.frame_text = document.createElement('div');
-	extension.ui.framerate_text = document.createElement('div');
+	extension.ui.time_text.className = extension.prefix + '__label';
 
-	time_container.className = extension.prefix + '__container';
-	duration_container.className = extension.prefix + '__container';
-	frame_container.className = extension.prefix + '__container';
-	framerate_container.className = extension.prefix + '__container';
+	extension.ui.duration_text = document.createElement('div');
+	extension.ui.duration_text.className = extension.prefix + '__label';
+
+	extension.ui.frame_text = document.createElement('div');
+	extension.ui.frame_text.className = extension.prefix + '__label';
+
+	extension.ui.framerate_text = document.createElement('div');
+	extension.ui.framerate_text.className = extension.prefix + '__label';
+
+	// sensible defaults in case locale has not loaded yet
+	extension.ui.time_text.textContent = 'Time';
+	extension.ui.duration_text.textContent = 'Duration';
+	extension.ui.frame_text.textContent = 'Frame';
+	extension.ui.framerate_text.textContent = 'FPS';
+
+	time_container.className = extension.prefix + '__container ' + extension.prefix + '__container--time';
+	duration_container.className = extension.prefix + '__container ' + extension.prefix + '__container--duration';
+	frame_container.className = extension.prefix + '__container ' + extension.prefix + '__container--frame';
+	framerate_container.className = extension.prefix + '__container ' + extension.prefix + '__container--framerate';
 
 	extension.ui.time.className = extension.prefix + '__value';
 	extension.ui.duration.className = extension.prefix + '__value';
@@ -40,13 +55,15 @@ document.addEventListener('ui-create', function (event) {
 	extension.ui.framerate.className = extension.prefix + '__value';
 
 	time_container.appendChild(extension.ui.time_text);
-	duration_container.appendChild(extension.ui.duration_text);
-	frame_container.appendChild(extension.ui.frame_text);
-	framerate_container.appendChild(extension.ui.framerate_text);
-	
 	time_container.appendChild(extension.ui.time);
+
+	duration_container.appendChild(extension.ui.duration_text);
 	duration_container.appendChild(extension.ui.duration);
+
+	frame_container.appendChild(extension.ui.frame_text);
 	frame_container.appendChild(extension.ui.frame);
+
+	framerate_container.appendChild(extension.ui.framerate_text);
 	framerate_container.appendChild(extension.ui.framerate);
 
 	extension.ui.surface.appendChild(time_container);

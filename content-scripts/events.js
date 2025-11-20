@@ -84,9 +84,21 @@ extension.events.features = {};
 --------------------------------------------------------------*/
 
 extension.events.handler = function (event) {
-	var prevent = false;
+	var prevent = false,
+		activeVideo = null,
+		uiVisible = extension.ui.classList.contains(extension.prefix + '--visible');
 
-	if (extension.ui.classList.contains(extension.prefix + '--visible')) {
+	if (extension.videoManager && typeof extension.videoManager.ensureActiveVideo === 'function') {
+		activeVideo = extension.videoManager.ensureActiveVideo();
+	}
+
+	if (!activeVideo && extension.videos.active) {
+		activeVideo = extension.videos.active;
+	}
+
+	// Allow keyboard shortcuts to work even when the overlay is hidden,
+	// as long as we have an active video to target.
+	if (activeVideo || uiVisible) {
 		for (var key in extension.events.features) {
 			var shortcut = extension.storage.items[key];
 
@@ -113,6 +125,12 @@ extension.events.handler = function (event) {
 
 					if (extension.events.data.wheel === 0) {
 						if (same_keys === true) {
+							if (activeVideo && extension.ui && typeof extension.ui.show === 'function' && uiVisible === false) {
+								try {
+									extension.ui.show(activeVideo.getBoundingClientRect());
+								} catch (error) { }
+							}
+
 							extension.events.features[key](event);
 
 							prevent = true;
@@ -136,14 +154,26 @@ extension.events.keyboard.keydown = function (event) {
 		return false;
 	}
 
+	// Normalize key codes for punctuation keys to improve cross-browser consistency.
+	var keyCode = event.keyCode;
+	if (!keyCode && event.key) {
+		var map = {
+			',': 188,
+			'.': 190,
+			'[': 219,
+			']': 221
+		};
+		keyCode = map[event.key];
+	}
+
 	if (event.code === 'AltLeft' || event.code === 'AltRight') {
 		extension.events.data.alt = true;
 	} else if (event.code === 'ControlLeft' || event.code === 'ControlRight') {
 		extension.events.data.ctrl = true;
 	} else if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
 		extension.events.data.shift = true;
-	} else {
-		extension.events.data.keys[event.keyCode] = true;
+	} else if (keyCode) {
+		extension.events.data.keys[keyCode] = true;
 	}
 
 	extension.events.data.wheel = 0;
