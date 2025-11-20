@@ -20,7 +20,13 @@ extension.locale = {
 --------------------------------------------------------------*/
 
 extension.locale.get = function (message) {
-	return this.message[message] || message;
+	var bucket = (this && this.message) ? this.message : {};
+
+	if (bucket && Object.prototype.hasOwnProperty.call(bucket, message)) {
+		return bucket[message];
+	}
+
+	return message;
 };
 
 

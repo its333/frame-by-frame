@@ -26,6 +26,14 @@ extension.events = {
 	mouse: {}
 };
 
+extension.events.cleanupKeys = function () {
+	for (var code in this.data.keys) {
+		if (Number.isNaN(Number(code))) {
+			delete this.data.keys[code];
+		}
+	}
+};
+
 
 /*--------------------------------------------------------------
 # CREATE
@@ -87,6 +95,8 @@ extension.events.handler = function (event) {
 	var prevent = false,
 		activeVideo = null,
 		uiVisible = extension.ui.classList.contains(extension.prefix + '--visible');
+
+	extension.events.cleanupKeys();
 
 	if (extension.videoManager && typeof extension.videoManager.ensureActiveVideo === 'function') {
 		activeVideo = extension.videoManager.ensureActiveVideo();
@@ -154,17 +164,26 @@ extension.events.keyboard.keydown = function (event) {
 		return false;
 	}
 
-	// Normalize key codes for punctuation keys to improve cross-browser consistency.
-	var keyCode = event.keyCode;
-	if (!keyCode && event.key) {
+	var mapKeyToCode = function (evt) {
+		if (evt.keyCode) {
+			return evt.keyCode;
+		}
+
 		var map = {
 			',': 188,
 			'.': 190,
 			'[': 219,
 			']': 221
 		};
-		keyCode = map[event.key];
-	}
+
+		if (evt.key && map[evt.key]) {
+			return map[evt.key];
+		}
+
+		return null;
+	};
+
+	var keyCode = mapKeyToCode(event);
 
 	if (event.code === 'AltLeft' || event.code === 'AltRight') {
 		extension.events.data.alt = true;
@@ -172,8 +191,10 @@ extension.events.keyboard.keydown = function (event) {
 		extension.events.data.ctrl = true;
 	} else if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
 		extension.events.data.shift = true;
-	} else if (keyCode) {
-		extension.events.data.keys[keyCode] = true;
+	} else {
+		if (keyCode) {
+			extension.events.data.keys[keyCode] = true;
+		}
 	}
 
 	extension.events.data.wheel = 0;
@@ -191,6 +212,27 @@ extension.events.keyboard.keyup = function (event) {
 		return false;
 	}
 
+	var mapKeyToCode = function (evt) {
+		if (evt.keyCode) {
+			return evt.keyCode;
+		}
+
+		var map = {
+			',': 188,
+			'.': 190,
+			'[': 219,
+			']': 221
+		};
+
+		if (evt.key && map[evt.key]) {
+			return map[evt.key];
+		}
+
+		return null;
+	};
+
+	var keyCode = mapKeyToCode(event);
+
 	if (event.code === 'AltLeft' || event.code === 'AltRight') {
 		extension.events.data.alt = false;
 	} else if (event.code === 'ControlLeft' || event.code === 'ControlRight') {
@@ -198,7 +240,7 @@ extension.events.keyboard.keyup = function (event) {
 	} else if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
 		extension.events.data.shift = false;
 	} else {
-		delete extension.events.data.keys[event.keyCode];
+		delete extension.events.data.keys[keyCode];
 	}
 
 	extension.events.data.wheel = 0;

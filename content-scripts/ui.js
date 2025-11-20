@@ -85,6 +85,13 @@ extension.ui.create = function () {
 	this.drag.className = extension.prefix + '__button ' + extension.prefix + '__drag-and-drop';
 	this.resize.className = extension.prefix + '__button ' + extension.prefix + '__resize';
 
+	this.toggle.setAttribute('aria-label', 'Toggle overlay');
+	this.drag.setAttribute('aria-label', 'Move overlay');
+	this.resize.setAttribute('aria-label', 'Resize overlay');
+	this.toggle.setAttribute('tabindex', '0');
+	this.drag.setAttribute('tabindex', '-1');
+	this.resize.setAttribute('tabindex', '-1');
+
 	this.DOMRect = {
 		left: 0,
 		top: 0,

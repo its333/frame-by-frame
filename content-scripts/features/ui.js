@@ -25,6 +25,7 @@ document.addEventListener('ui-create', function (event) {
 	extension.ui.duration = document.createElement('div');
 	extension.ui.frame = document.createElement('div');
 	extension.ui.framerate = document.createElement('div');
+	extension.ui.framerate_detect = document.createElement('button');
 
 	extension.ui.time_text = document.createElement('div');
 	extension.ui.time_text.className = extension.prefix + '__label';
@@ -53,6 +54,9 @@ document.addEventListener('ui-create', function (event) {
 	extension.ui.duration.className = extension.prefix + '__value';
 	extension.ui.frame.className = extension.prefix + '__value';
 	extension.ui.framerate.className = extension.prefix + '__value';
+	extension.ui.framerate_detect.className = extension.prefix + '__detect';
+	extension.ui.framerate_detect.type = 'button';
+	extension.ui.framerate_detect.textContent = 'Auto';
 
 	time_container.appendChild(extension.ui.time_text);
 	time_container.appendChild(extension.ui.time);
@@ -64,6 +68,7 @@ document.addEventListener('ui-create', function (event) {
 	frame_container.appendChild(extension.ui.frame);
 
 	framerate_container.appendChild(extension.ui.framerate_text);
+	framerate_container.appendChild(extension.ui.framerate_detect);
 	framerate_container.appendChild(extension.ui.framerate);
 
 	extension.ui.surface.appendChild(time_container);
@@ -73,6 +78,14 @@ document.addEventListener('ui-create', function (event) {
 
 	updateLocaleTextUi();
 	document.addEventListener('locale-updated', updateLocaleTextUi);
+
+	extension.ui.framerate_detect.addEventListener('click', function (event) {
+		event.stopPropagation();
+
+		if (extension.videoManager && typeof extension.videoManager.detectFramerate === 'function') {
+			extension.videoManager.detectFramerate();
+		}
+	});
 });
 
 

@@ -264,6 +264,74 @@
                 }
         };
 
+        VideoManager.prototype.detectFramerate = function () {
+                var video = this.ensureActiveVideo();
+
+                if (!video) {
+                        console.warn('Frame-by-Frame: no active video to detect framerate');
+                        return;
+                }
+
+                if (!video.getVideoPlaybackQuality || typeof video.getVideoPlaybackQuality !== 'function') {
+                        console.warn('Frame-by-Frame: getVideoPlaybackQuality not supported on this video');
+                        return;
+                }
+
+                var initialQuality = video.getVideoPlaybackQuality();
+                var startFrames = initialQuality.totalVideoFrames;
+
+                if (typeof startFrames !== 'number') {
+                        console.warn('Frame-by-Frame: totalVideoFrames is unavailable');
+                        return;
+                }
+
+                var wasPaused = video.paused;
+                var prevRate = video.playbackRate;
+
+                var resume = function () {
+                        video.playbackRate = prevRate;
+
+                        if (wasPaused) {
+                            video.pause();
+                        }
+                };
+
+                // Ensure playback for sampling.
+                if (wasPaused) {
+                        video.play().catch(function () { });
+                }
+
+                var startTime = performance.now();
+                var self = this;
+
+                setTimeout(function () {
+                        var endQuality = video.getVideoPlaybackQuality();
+                        var endFrames = endQuality.totalVideoFrames;
+                        var elapsed = (performance.now() - startTime) / 1000;
+                        var deltaFrames = endFrames - startFrames;
+
+                        resume();
+
+                        if (deltaFrames > 0 && elapsed > 0) {
+                                var detectedFps = Math.round(deltaFrames / elapsed);
+
+                                extension.framerate = detectedFps;
+
+                                try {
+                                        chrome.storage.local.set({ framerate: detectedFps });
+                                } catch (error) {
+                                        console.warn('Frame-by-Frame: unable to persist detected framerate', error);
+                                }
+
+                                if (extension.ui && typeof extension.ui.update === 'function') {
+                                        extension.ui.update();
+                                }
+                        } else {
+                                console.warn('Frame-by-Frame: unable to detect framerate (insufficient frames)');
+                        }
+                }, 700);
+        };
+
         VideoManager.prototype.destroy = function () {
                 if (this.observer) {
                         this.observer.disconnect();

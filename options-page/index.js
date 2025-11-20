@@ -25,6 +25,23 @@ function renderError(messageKey) {
 	satus.render(extension.skeleton);
 }
 
+function prepareUnsupportedToolbar(message) {
+	extension.skeleton.main.layers.toolbar = {
+		component: 'section',
+		variant: 'card',
+		text: message,
+		action: {
+			component: 'button',
+			text: 'Open supported tab',
+			on: {
+				click: function () {
+					chrome.tabs.create({ url: 'https://example.com' });
+				}
+			}
+		}
+	};
+}
+
 
 /*--------------------------------------------------------------
 # INITIALIZATION
@@ -45,7 +62,7 @@ satus.storage.import(function (items) {
 			var tab = tabs[0];
 
 			if (!tab || !tab.id) {
-				renderError();
+				prepareUnsupportedToolbar('No active tab detected. Open a website to configure Frame by Frame Pro.');
 				return;
 			}
 
@@ -56,7 +73,7 @@ satus.storage.import(function (items) {
 				if (chrome.runtime.lastError) {
 					var errMsg = chrome.runtime.lastError && chrome.runtime.lastError.message ? chrome.runtime.lastError.message : 'No receiver in tab';
 					console.warn('Frame-by-Frame options: unable to reach tab - ' + errMsg);
-					renderError();
+					prepareUnsupportedToolbar('This tab cannot be controlled. Open a regular webpage to enable shortcuts.');
 					return;
 				}
 
@@ -81,13 +98,9 @@ satus.storage.import(function (items) {
 					response.startsWith('view-source:') ||
 					response.endsWith('.pdf')
 				) {
-					extension.skeleton.main.layers.toolbar = {
-						component: 'alert',
-						variant: 'error',
-						text: function () {
-							return satus.locale.get('thePageHOSTNAMEisProtectedByBrowser').replace('HOSTNAME', response);
-						}
-					};
+					prepareUnsupportedToolbar(
+						satus.locale.get('thePageHOSTNAMEisProtectedByBrowser').replace('HOSTNAME', response)
+					);
 				} else {
 					extension.skeleton.main.layers.toolbar = {
 						component: 'alert',

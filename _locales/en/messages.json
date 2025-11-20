@@ -38,9 +38,9 @@
     "frame": {
         "message": "Frame"
     },
-	"framerate": {
-		"message": "FPS"
-	},
+    "framerate": {
+        "message": "FPS"
+    },
     "hideInFullscreen": {
         "message": "Hide in fullscreen"
     },
@@ -94,5 +94,8 @@
     },
     "time": {
         "message": "Time"
+    },
+    "openSupportedTab": {
+        "message": "Open supported tab"
     }
 }

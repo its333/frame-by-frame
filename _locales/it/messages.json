@@ -91,5 +91,8 @@
     },
     "time": {
         "message": "Time"
+    },
+    "openSupportedTab": {
+        "message": "Open supported tab"
     }
 }

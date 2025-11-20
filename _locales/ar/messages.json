@@ -91,5 +91,8 @@
     },
     "time": {
         "message": "الوقت"
+    },
+    "openSupportedTab": {
+        "message": "Open supported tab"
     }
 }

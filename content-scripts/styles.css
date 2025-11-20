@@ -270,6 +270,29 @@ html.frame-by-frame--resize * {
         color: #f7f9ff !important;
 }
 
+.frame-by-frame__detect {
+        align-self: flex-start !important;
+        padding: 4px 10px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        background: linear-gradient(135deg, #ffb703, #ff7a00) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        border-radius: 10px !important;
+        cursor: pointer !important;
+        transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease !important;
+}
+
+.frame-by-frame__detect:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.22) !important;
+}
+
+.frame-by-frame__detect:focus-visible {
+        outline: 2px solid rgba(255, 255, 255, 0.8) !important;
+        outline-offset: 2px !important;
+        box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.4) !important;
+}
 .frame-by-frame__value::after {
         content: "";
         position: absolute !important;
@@ -319,6 +342,11 @@ html.frame-by-frame--resize * {
         transform: translateY(-1px) scale(1.02) !important;
 }
 
+.frame-by-frame__button:focus-visible {
+        outline: 2px solid rgba(255, 255, 255, 0.8) !important;
+        outline-offset: 2px !important;
+        box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.35) !important;
+}
 .frame-by-frame__surface--hover .frame-by-frame__button {
         visibility: visible !important;
         opacity: 1 !important;
