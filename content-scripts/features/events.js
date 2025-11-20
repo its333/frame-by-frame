@@ -1,106 +1,328 @@
 /*--------------------------------------------------------------
 # EVENTS
+# Enhanced video handling with delegation and lifecycle management.
 --------------------------------------------------------------*/
 
-/*--------------------------------------------------------------
-# DATA
---------------------------------------------------------------*/
+(function () {
+        'use strict';
 
-extension.events.clickDrag = {
-	x: 0,
-	y: 0
-};
+        var BODY = document.body || document.documentElement;
 
-extension.events.clickResize = {
-	x: 0,
-	y: 0
-};
+        /*--------------------------------------------------------------
+        # VIDEO MANAGER
+        # Tracks video elements, attaches listeners once, and cleans up
+        # when elements leave the DOM.
+        --------------------------------------------------------------*/
 
+        function VideoManager() {
+                this.videos = new Map();
+                this.activeVideo = null;
+                this.observer = null;
 
-/*--------------------------------------------------------------
-# FEATURES
---------------------------------------------------------------*/
+                this.handleBodyInteraction = this.handleBodyInteraction.bind(this);
+                this.handleMutations = this.handleMutations.bind(this);
 
-extension.events.features.increase_framerate = function (event) {
-	if (extension.videos.active) {
-		if (event.shiftKey) {
-			extension.framerate += 10;
-		} else {
-			extension.framerate += 1;
-		}
+                this.setupDelegatedListeners();
+                this.observeDom();
+                this.bootstrapExistingVideos();
+        }
 
-		chrome.storage.local.set({
-			framerate: extension.framerate
-		});
+        VideoManager.prototype.setupDelegatedListeners = function () {
+                /*
+                 * Use event delegation so that newly created videos are picked up
+                 * automatically without registering global listeners for each one.
+                 */
+                BODY.addEventListener('click', this.handleBodyInteraction, true);
+                BODY.addEventListener('pointerdown', this.handleBodyInteraction, true);
+        };
 
-		extension.ui.update();
-		extension.ui.sleep();
-	}
-};
+        VideoManager.prototype.observeDom = function () {
+                var config = { childList: true, subtree: true };
 
-extension.events.features.decrease_framerate = function (event) {
-	if (extension.videos.active) {
-		if (event.shiftKey) {
-			extension.framerate -= 10;
-		} else {
-			extension.framerate -= 1;
-		}
+                this.observer = new MutationObserver(this.handleMutations);
+                this.observer.observe(document.documentElement || document, config);
+        };
 
-		chrome.storage.local.set({
-			framerate: extension.framerate
-		});
+        VideoManager.prototype.bootstrapExistingVideos = function () {
+                var existing = document.querySelectorAll('video');
 
-		extension.ui.update();
-		extension.ui.sleep();
-	}
-};
+                for (var i = 0; i < existing.length; i++) {
+                        this.trackVideo(existing[i]);
+                }
+        };
 
-extension.events.features.next_shortcut = function (event) {
-	if (extension.videos.active) {
-		var video = extension.videos.active,
-			frame = 1 / extension.framerate;
+        VideoManager.prototype.inspectNode = function (node, callback) {
+                if (!node) {
+                        return;
+                }
 
-		if (event.shiftKey) {
-			frame *= 10;
-		}
+                if (node.nodeName === 'VIDEO') {
+                        callback(node);
+                }
 
-		if (video.paused === false) {
-			video.pause();
+                if (node.querySelectorAll) {
+                        var nested = node.querySelectorAll('video');
 
-			is_autoplay = true;
-		}
+                        for (var i = 0; i < nested.length; i++) {
+                                callback(nested[i]);
+                        }
+                }
+        };
 
-		video.currentTime = Math.min(video.duration, video.currentTime + frame);
+        VideoManager.prototype.handleMutations = function (mutations) {
+                for (var i = 0; i < mutations.length; i++) {
+                        var mutation = mutations[i];
 
-		extension.ui.sleep();
-	}
-};
+                        for (var j = 0; j < mutation.addedNodes.length; j++) {
+                                this.inspectNode(mutation.addedNodes[j], this.trackVideo.bind(this));
+                        }
 
-extension.events.features.prev_shortcut = function (event) {
-	if (extension.videos.active) {
-		var video = extension.videos.active,
-			frame = 1 / extension.framerate;
+                        for (var k = 0; k < mutation.removedNodes.length; k++) {
+                                this.inspectNode(mutation.removedNodes[k], this.untrackVideo.bind(this));
+                        }
+                }
+        };
 
-		if (event.shiftKey) {
-			frame *= 10;
-		}
+        VideoManager.prototype.handleBodyInteraction = function (event) {
+                var target = event && event.target ? event.target : null;
+                var video = target && target.closest ? target.closest('video') : null;
 
-		if (video.paused === false) {
-			video.pause();
+                if (!video) {
+                        return;
+                }
 
-			is_autoplay = true;
-		}
+                this.trackVideo(video);
+                this.setActiveVideo(video);
+        };
 
-		video.currentTime = Math.min(video.duration, video.currentTime - frame);
+        VideoManager.prototype.trackVideo = function (video) {
+                if (!(video instanceof HTMLVideoElement)) {
+                        return;
+                }
 
-		extension.ui.sleep();
-	}
-};
+                if (this.videos.has(video)) {
+                        return;
+                }
 
-extension.events.features.hide_shortcut = function (event) {
-	if (extension.videos.active) {
-		extension.ui.actions.toggle();
+                var listeners = [];
+                var register = function (type, handler) {
+                        video.addEventListener(type, handler, true);
+                        listeners.push(function () {
+                                video.removeEventListener(type, handler, true);
+                        });
+                };
 
-		extension.ui.sleep();
-	}
-};
+                var onTimeUpdate = function () {
+                        try {
+                                if (extension.ui && typeof extension.ui.update === 'function') {
+                                        extension.ui.update();
+                                }
+                        } catch (error) {
+                                console.error('Frame-by-Frame: failed to update UI on timeupdate', error);
+                        }
+                };
+
+                register('loadedmetadata', this.setActiveVideo.bind(this, video));
+                register('timeupdate', onTimeUpdate);
+                register('emptied', this.untrackVideo.bind(this, video));
+
+                this.videos.set(video, { cleanup: listeners });
+
+                if (!this.activeVideo) {
+                        this.setActiveVideo(video);
+                }
+        };
+
+        VideoManager.prototype.untrackVideo = function (video) {
+                var record = this.videos.get(video);
+
+                if (!record) {
+                        return;
+                }
+
+                for (var i = 0; i < record.cleanup.length; i++) {
+                        try {
+                                record.cleanup[i]();
+                        } catch (error) {
+                                console.warn('Frame-by-Frame: failed to clean listener', error);
+                        }
+                }
+
+                this.videos.delete(video);
+
+                if (this.activeVideo === video) {
+                        this.activeVideo = null;
+                        extension.videos.active = null;
+
+                        if (extension.ui && typeof extension.ui.hide === 'function') {
+                                extension.ui.hide();
+                        }
+                }
+        };
+
+        VideoManager.prototype.ensureActiveVideo = function () {
+                if (this.activeVideo && !this.activeVideo.isConnected) {
+                        this.untrackVideo(this.activeVideo);
+                }
+
+                if (!this.activeVideo) {
+                        var iterator = this.videos.keys();
+                        var next = iterator.next();
+
+                        while (!next.done) {
+                                var candidate = next.value;
+
+                                if (candidate.isConnected) {
+                                        this.setActiveVideo(candidate);
+                                        break;
+                                }
+
+                                next = iterator.next();
+                        }
+                }
+
+                if (!this.activeVideo) {
+                        var fallback = document.querySelector('video');
+
+                        if (fallback) {
+                                this.trackVideo(fallback);
+                                this.setActiveVideo(fallback);
+                        }
+                }
+
+                return this.activeVideo;
+        };
+
+        VideoManager.prototype.setActiveVideo = function (video) {
+                if (!(video instanceof HTMLVideoElement)) {
+                        return;
+                }
+
+                if (!video.isConnected) {
+                        return;
+                }
+
+                this.activeVideo = video;
+                extension.videos.active = video;
+        };
+
+        VideoManager.prototype.adjustFramerate = function (delta, event) {
+                if (!extension.videos.active) {
+                        return;
+                }
+
+                var step = event && event.shiftKey ? delta * 10 : delta;
+
+                extension.framerate = Math.max(1, extension.framerate + step);
+
+                try {
+                        chrome.storage.local.set({ framerate: extension.framerate });
+                } catch (error) {
+                        console.warn('Frame-by-Frame: unable to persist framerate', error);
+                }
+
+                if (extension.ui && typeof extension.ui.update === 'function') {
+                        extension.ui.update();
+                }
+
+                if (extension.ui && typeof extension.ui.sleep === 'function') {
+                        extension.ui.sleep();
+                }
+        };
+
+        VideoManager.prototype.scrub = function (direction, event) {
+                var video = this.ensureActiveVideo();
+
+                if (!video) {
+                        console.warn('Frame-by-Frame: no active video to scrub');
+                        return;
+                }
+
+                var framerate = extension.framerate || 60;
+                var multiplier = event && event.shiftKey ? 10 : 1;
+                var frame = multiplier / framerate;
+
+                try {
+                        if (video.paused === false) {
+                                video.pause();
+                                this.wasPlaying = true;
+                        }
+
+                        var duration = isNaN(video.duration) ? Infinity : video.duration;
+                        var nextTime = video.currentTime + direction * frame;
+
+                        nextTime = Math.max(0, Math.min(duration, nextTime));
+                        video.currentTime = nextTime;
+                } catch (error) {
+                        console.error('Frame-by-Frame: unable to scrub video', error);
+                }
+
+                if (extension.ui && typeof extension.ui.sleep === 'function') {
+                        extension.ui.sleep();
+                }
+        };
+
+        VideoManager.prototype.destroy = function () {
+                if (this.observer) {
+                        this.observer.disconnect();
+                }
+
+                BODY.removeEventListener('click', this.handleBodyInteraction, true);
+                BODY.removeEventListener('pointerdown', this.handleBodyInteraction, true);
+
+                var iterator = this.videos.keys();
+                var next = iterator.next();
+
+                while (!next.done) {
+                        this.untrackVideo(next.value);
+                        next = iterator.next();
+                }
+        };
+
+        var videoManager = new VideoManager();
+        extension.videoManager = videoManager;
+
+        /*--------------------------------------------------------------
+        # DATA
+        --------------------------------------------------------------*/
+
+        extension.events.clickDrag = {
+                x: 0,
+                y: 0
+        };
+
+        extension.events.clickResize = {
+                x: 0,
+                y: 0
+        };
+
+        /*--------------------------------------------------------------
+        # FEATURES
+        --------------------------------------------------------------*/
+
+        extension.events.features.increase_framerate = function (event) {
+                videoManager.adjustFramerate(1, event);
+        };
+
+        extension.events.features.decrease_framerate = function (event) {
+                videoManager.adjustFramerate(-1, event);
+        };
+
+        extension.events.features.next_shortcut = function (event) {
+                videoManager.scrub(1, event);
+        };
+
+        extension.events.features.prev_shortcut = function (event) {
+                videoManager.scrub(-1, event);
+        };
+
+        extension.events.features.hide_shortcut = function () {
+                if (extension.videos.active && extension.ui && extension.ui.actions) {
+                        extension.ui.actions.toggle();
+
+                        if (typeof extension.ui.sleep === 'function') {
+                                extension.ui.sleep();
+                        }
+                }
+        };
+})();
